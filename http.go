@@ -9,6 +9,7 @@ import (
 )
 
 type HttpRequest struct {
+	Method  string
 	Url     string
 	Body    []byte
 	Header  http.Header
@@ -21,7 +22,7 @@ type HttpResponse struct {
 	Header http.Header
 }
 
-func MakeRequest(method string, data HttpRequest) (HttpResponse, error) {
+func MakeRequest(data HttpRequest) (HttpResponse, error) {
 	if data.Timeout == 0 {
 		data.Timeout = 60 * time.Minute
 	}
@@ -29,7 +30,7 @@ func MakeRequest(method string, data HttpRequest) (HttpResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), data.Timeout)
 	defer cancel()
 
-	request, err := http.NewRequestWithContext(ctx, method, data.Url, bytes.NewBuffer(data.Body))
+	request, err := http.NewRequestWithContext(ctx, data.Method, data.Url, bytes.NewBuffer(data.Body))
 	if err != nil {
 		return HttpResponse{}, err
 	}
