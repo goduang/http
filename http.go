@@ -1,4 +1,4 @@
-package utils
+package http
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ type HttpRequest struct {
 	Body    []byte
 	Header  http.Header
 	Timeout time.Duration
+	Client  *http.Client
 }
 
 type HttpResponse struct {
@@ -22,33 +23,36 @@ type HttpResponse struct {
 	Header http.Header
 }
 
-func MakeRequest(client *http.Client, data HttpRequest) (HttpResponse, error) {
+func MakeRequest(ctx context.Context, data *HttpRequest) (*HttpResponse, error) {
 	if data.Timeout == 0 {
 		data.Timeout = 60 * time.Minute
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), data.Timeout)
-	defer cancel()
-
 	request, err := http.NewRequestWithContext(ctx, data.Method, data.Url, bytes.NewBuffer(data.Body))
 	if err != nil {
-		return HttpResponse{}, err
+		return nil, err
 	}
 
-	for k, v := range data.Header {
-		request.Header.Set(k, v[0])
+	for key, values := range data.Header {
+		for _, value := range values {
+			request.Header.Add(key, value)
+		}
 	}
 
-	response, err := client.Do(request)
+	if data.Client == nil {
+		data.Client = http.DefaultClient
+	}
+
+	response, err := data.Client.Do(request)
 	if err != nil {
-		return HttpResponse{}, err
+		return nil, err
 	}
 	defer response.Body.Close()
 
 	content, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return HttpResponse{}, err
+		return nil, err
 	}
 
-	return HttpResponse{response.StatusCode, content, response.Header}, nil
+	return &HttpResponse{response.StatusCode, content, response.Header}, nil
 }
