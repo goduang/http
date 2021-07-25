@@ -22,7 +22,7 @@ type HttpResponse struct {
 	Header http.Header
 }
 
-func MakeRequest(data HttpRequest) (HttpResponse, error) {
+func MakeRequest(client *http.Client, data HttpRequest) (HttpResponse, error) {
 	if data.Timeout == 0 {
 		data.Timeout = 60 * time.Minute
 	}
@@ -39,7 +39,6 @@ func MakeRequest(data HttpRequest) (HttpResponse, error) {
 		request.Header.Set(k, v[0])
 	}
 
-	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
 		return HttpResponse{}, err
