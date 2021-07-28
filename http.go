@@ -24,10 +24,6 @@ type HttpResponse struct {
 }
 
 func MakeRequest(ctx context.Context, data *HttpRequest) (*HttpResponse, error) {
-	if data.Timeout == 0 {
-		data.Timeout = 60 * time.Minute
-	}
-
 	request, err := http.NewRequestWithContext(ctx, data.Method, data.Url, bytes.NewBuffer(data.Body))
 	if err != nil {
 		return nil, err
@@ -41,6 +37,9 @@ func MakeRequest(ctx context.Context, data *HttpRequest) (*HttpResponse, error) 
 
 	if data.Client == nil {
 		data.Client = http.DefaultClient
+	}
+	if data.Client.Timeout == 0 {
+		data.Client.Timeout = data.Timeout
 	}
 
 	response, err := data.Client.Do(request)
